@@ -14,7 +14,7 @@ port = 8000
 debug = true
 count = 16384
 coin = "BTC and \"trust network\" and simple hello"
-private = [ most powerful, better, high top]
+private = [ "most \"powerful\"",   "better"  , "high top"]
 tonus = [124, 364, 512]
 bools = [true, false, false]
 ```
@@ -156,7 +156,7 @@ int main() {
 ```commandline
 port: 8000
 coin: BTC and "trust network" and simple hello
-most powerful
+most "powerful"
 better
 high top
 124

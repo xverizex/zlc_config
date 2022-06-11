@@ -225,6 +225,57 @@ static char *parse_string (char *data, int *error, int *pos) {
     return str;
 }
 
+static char *parse_string_quote (char *data, int *error, int *pos) {
+    *error = 0;
+
+    if (data[0] != '"') {
+        *error = ZL_ERROR_PARSE_STRING;
+        return NULL;
+    }
+
+    char temp_e = 0;
+    char temp_s = 0;
+    char *temp_r = 0;
+    char *e = strchr (data, '\n');
+    if (e) {
+        temp_e = *e;
+        *e = 0;
+        *pos = e - data;
+    }
+
+    int len = strlen (data);
+
+    int i = 1;
+    int quotes = 0;
+
+    for (; i <= len; i++) {
+        if (data[i] == '\\' && data[i + 1] == '"') {
+            i += 1;
+            quotes++;
+            continue;
+        }
+        if (data[i] == '"') {
+            i--;
+            break;
+        }
+    }
+
+    *pos = i;
+
+    int total = i - quotes;
+
+    char *str = calloc (total + 1, 1);
+
+    int index_data = 1;
+    for (int i = 0; i < total; i++) {
+        if (data[index_data] == '\\' && data[index_data + 1] == '"') index_data++;
+        str[i] = data[index_data++];
+    }
+    str[total] = 0;
+
+    return str;
+}
+
 static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
     *error = 0;
     *coun = 0;
@@ -242,32 +293,50 @@ static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
         temp_e = *e;
         *e = 0;
         *pos = e - data;
+    } else {
+        *pos = strlen (data);
     }
 
     int len = strlen (data);
 
     int count = 1;
+    int state_quote = 0;
     for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
-        if (data[i] == ',') count++;
+        if (data[i] == '\\' && data[i + 1] == '"') { i++; continue; }
+        if (data[i] == '"') state_quote++;
+        if (data[i] == ',') {
+            if (state_quote == 2) {
+                count++;
+                state_quote = 0;
+            }
+
+
+        }
     }
+
 
     char **str = calloc (count, sizeof (void *));
     int index_str = 0;
 
     int i = 1;
     while (data[i] == ' ') i++;
-    int start = i;
+
     for (; data[i] != '\0' && i < len; i++) {
+        int error;
+        int pos;
+        while (data[i] == ' ') i++;
+        str[index_str] = parse_string_quote(&data[i], &error, &pos);
+        i += pos;
+        index_str++;
+        i += 2;
+        while (data[i] == ' ') i++;
         if (data[i] == ',' || data[i] == ']') {
-            int len = i - start;
-            str[index_str] = calloc (len + 1, 1);
-            strncpy (str[index_str], &data[start], len);
-            index_str++;
-            if (data[i] == ']') break;
+            if (data[i] == ']') {
+                break;
+            }
             i++;
             while (data[i] == ' ') i++;
-            start = i;
-
+            i--;
         }
     }
 
