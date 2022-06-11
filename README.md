@@ -2,7 +2,7 @@
 
 This is a configure library which present a simple interface for get params from a config file.
 
-# How this use?
+# How do this use?
 
 There is a config file
 ```commandline
