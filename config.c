@@ -38,6 +38,14 @@ int32_t zl_config_get_int32 (struct zl_config *cfg, int group, int name) {
     return cfg->group[group].opt[name].v.val_int32;
 }
 
+int64_t zl_config_get_int64 (struct zl_config *cfg, int group, int name) {
+    return cfg->group[group].opt[name].v.val_int64;
+}
+
+const char *zl_config_get_string (struct zl_config *cfg, int group, int name) {
+    return cfg->group[group].opt[name].v.val_str;
+}
+
 static bool parse_bool (char *data, int *error, int *pos) {
     *error = 0;
     *pos = 0;
@@ -71,7 +79,7 @@ static bool parse_bool (char *data, int *error, int *pos) {
     return result;
 }
 
-static int32_t parse_int32 (char *data, int *error, int *pos) {
+static int32_t parse_int (char *data, int *error, int *pos, bool is_64) {
     *error = 0;
 
     char temp_e = 0;
@@ -102,12 +110,63 @@ static int32_t parse_int32 (char *data, int *error, int *pos) {
         }
     }
 
-    if (*error == 0) result = atoi (data);
+    if (*error == 0) {
+        if (is_64) result = atol (data);
+        else result = atoi (data);
+    }
 
     if (temp_e > 0) *e = temp_e;
     if (temp_s > 0) *s = temp_s;
 
     return result;
+}
+
+static char *parse_string (char *data, int *error, int *pos) {
+    *error = 0;
+
+    if (data[0] != '"') {
+        *error = ZL_ERROR_PARSE_STRING;
+        return NULL;
+    }
+
+    char temp_e = 0;
+    char temp_s = 0;
+    char *temp_r = 0;
+    char *e = strchr (data, '\n');
+    if (e) {
+        temp_e = *e;
+        *e = 0;
+        *pos = e - data;
+    }
+
+    int len = strlen (data);
+
+    int i = 1;
+    int quotes = 0;
+    for (; i <= len; i++) {
+        if (data[i] == '\\' && data[i + 1] == '"') {
+            i += 1;
+            quotes++;
+            continue;
+        }
+        if (data[i] == '"') {
+            i--;
+            break;
+        }
+    }
+
+    int total = i - quotes;
+
+    char *str = calloc (total + 1, 1);
+
+    int index_data = 1;
+    for (int i = 0; i < total; i++) {
+        if (data[index_data] == '\\' && data[index_data + 1] == '"') index_data++;
+        str[i] = data[index_data++];
+    }
+    str[total] = 0;
+
+    return str;
 }
 
 static int get_index_group (struct zl_config *cfg, const char *name) {
@@ -139,6 +198,8 @@ static char *get_data_file (const char *filepath, size_t *size_file) {
     fclose (fp);
     return data;
 }
+
+
 
 int zl_config_parse (struct zl_config *cfg, const char *filepath) {
     size_t size_file = 0L;
@@ -252,7 +313,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                     {
                         int error;
                         int pos;
-                        int32_t ret = parse_int32(&data[i], &error, &pos);
+                        int32_t ret = parse_int(&data[i], &error, &pos, false);
                         i += pos;
                         if (error < 0) {
                             free (data);
@@ -265,6 +326,41 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         opi = 0;
                     }
                     break;
+                    case ZL_TYPE_INT64:
+                    {
+                        int error;
+                        int pos;
+                        int32_t ret = parse_int(&data[i], &error, &pos, true);
+                        i += pos;
+                        if (error < 0) {
+                            free (data);
+                            if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            return error;
+                        }
+
+                        cfg->group[index_group].opt[index_opt].v.val_int32 = ret;
+                        state = STATE_NEW_NAME;
+                        opi = 0;
+                    }
+                        break;
+                    case ZL_TYPE_STRING:
+                    {
+                        int error;
+                        int pos;
+                        char *ret = parse_string(&data[i], &error, &pos);
+                        i += pos;
+                        if (error < 0) {
+                            free (data);
+                            if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            return error;
+                        }
+
+                        if (cfg->group[index_group].opt[index_opt].v.val_str) free (cfg->group[index_group].opt[index_opt].v.val_str);
+                        cfg->group[index_group].opt[index_opt].v.val_str = ret;
+                        state = STATE_NEW_NAME;
+                        opi = 0;
+                    }
+                        break;
                 }
                 break;
         }

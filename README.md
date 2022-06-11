@@ -3,6 +3,19 @@
 This is a configure library which present a simple interface for get params from a config file.
 
 # How this use?
+
+There is a config file
+```c++
+[Net]
+debug = true
+port = 8000
+
+[Main]
+debug = true
+count = 16384
+coin = "BTC and \"trust network\" and simple hello"
+```
+
 Define enum groups and options for each group.
 ```C++
 enum Groups {
@@ -20,6 +33,7 @@ enum OptionsNet {
 enum OptionsMain {
     OPT_MAIN_DEBUG,
     OPT_MAIN_COUNT,
+    OPT_MAIN_COIN,
     N_MAIN_OPTS
 };
 ```
@@ -40,6 +54,7 @@ Now, init a config structure and initialize groups and options.
 
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin");
 
     zl_config_parse(cfg, "../test.conf");
 ```
@@ -68,6 +83,7 @@ enum OptionsNet {
 enum OptionsMain {
     OPT_MAIN_DEBUG,
     OPT_MAIN_COUNT,
+    OPT_MAIN_COIN,
     N_MAIN_OPTS
 };
 
@@ -85,12 +101,21 @@ int main() {
 
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin");
+
 
     zl_config_parse(cfg, "../test.conf");
 
     int port = zl_config_get_int32(cfg, GROUP_NET, OPT_NET_PORT);
+    const char *coin = zl_config_get_string(cfg, GROUP_MAIN, OPT_MAIN_COIN);
 
     printf ("port: %d\n", port);
+    printf ("coin: %s\n", coin);
 }
+```
 
+# Output
+```commandline
+port: 8000
+coin: BTC and "trust network" and simple hello
 ```
