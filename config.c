@@ -79,7 +79,7 @@ static bool parse_bool (char *data, int *error, int *pos) {
     return result;
 }
 
-static int32_t parse_int (char *data, int *error, int *pos, bool is_64) {
+static int32_t parse_int32 (char *data, int *error, int *pos) {
     *error = 0;
 
     char temp_e = 0;
@@ -111,8 +111,48 @@ static int32_t parse_int (char *data, int *error, int *pos, bool is_64) {
     }
 
     if (*error == 0) {
-        if (is_64) result = atol (data);
-        else result = atoi (data);
+        result = atoi (data);
+    }
+
+    if (temp_e > 0) *e = temp_e;
+    if (temp_s > 0) *s = temp_s;
+
+    return result;
+}
+
+static int64_t parse_int64 (char *data, int *error, int *pos) {
+    *error = 0;
+
+    char temp_e = 0;
+    char temp_s = 0;
+    char *e = strchr (data, '\n');
+    if (e) {
+        temp_e = *e;
+        *e = 0;
+        *pos = e - data;
+    }
+
+    char *s = strchr (data, ' ');
+    if (s) {
+        temp_s = *s;
+        *s = 0;
+        if (!e) {
+            *pos = s - data;
+        }
+    }
+
+    int32_t result = 0;
+
+    int len = strlen (data);
+    for (int i = 0; i < len; i++) {
+        if (data[i] < '0' || data[i] > '9') {
+            *error = ZL_ERROR_INT64;
+            break;
+        }
+    }
+
+    if (*error == 0) {
+        result = atol (data);
     }
 
     if (temp_e > 0) *e = temp_e;
@@ -313,7 +353,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                     {
                         int error;
                         int pos;
-                        int32_t ret = parse_int(&data[i], &error, &pos, false);
+                        int32_t ret = parse_int32(&data[i], &error, &pos);
                         i += pos;
                         if (error < 0) {
                             free (data);
@@ -330,7 +370,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                     {
                         int error;
                         int pos;
-                        int32_t ret = parse_int(&data[i], &error, &pos, true);
+                        int64_t ret = parse_int64(&data[i], &error, &pos);
                         i += pos;
                         if (error < 0) {
                             free (data);
