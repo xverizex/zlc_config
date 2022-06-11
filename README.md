@@ -5,7 +5,7 @@ This is a configure library which present a simple interface for get params from
 # How this use?
 
 There is a config file
-```c++
+```commandline
 [Net]
 debug = true
 port = 8000
@@ -14,6 +14,9 @@ port = 8000
 debug = true
 count = 16384
 coin = "BTC and \"trust network\" and simple hello"
+private = [ most powerful, better, high top]
+tonus = [124, 364, 512]
+bools = [true, false, false]
 ```
 
 Define enum groups and options for each group.
@@ -34,6 +37,9 @@ enum OptionsMain {
     OPT_MAIN_DEBUG,
     OPT_MAIN_COUNT,
     OPT_MAIN_COIN,
+    OPT_MAIN_PRIVATE,
+    OPT_MAIN_TONUS,
+    OPT_MAIN_BOOLS,
     N_MAIN_OPTS
 };
 ```
@@ -55,6 +61,9 @@ Now, init a config structure and initialize groups and options.
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, ZL_TYPE_ARRAY_STRING, "private");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_TONUS, ZL_TYPE_ARRAY_INT64, "tonus");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, ZL_TYPE_ARRAY_BOOL, "bools");
 
     zl_config_parse(cfg, "../test.conf");
 ```
@@ -84,6 +93,9 @@ enum OptionsMain {
     OPT_MAIN_DEBUG,
     OPT_MAIN_COUNT,
     OPT_MAIN_COIN,
+    OPT_MAIN_PRIVATE,
+    OPT_MAIN_TONUS,
+    OPT_MAIN_BOOLS,
     N_MAIN_OPTS
 };
 
@@ -102,6 +114,12 @@ int main() {
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, ZL_TYPE_ARRAY_STRING, "private");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_TONUS, ZL_TYPE_ARRAY_INT64, "tonus");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, ZL_TYPE_ARRAY_BOOL, "bools");
+
+
+
 
 
     zl_config_parse(cfg, "../test.conf");
@@ -111,6 +129,26 @@ int main() {
 
     printf ("port: %d\n", port);
     printf ("coin: %s\n", coin);
+
+    /* print arrays */
+    int size_private;
+    const char **str_array = zl_config_get_array_string(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, &size_private);
+    for (int i = 0; i < size_private; i++) {
+        printf ("%s\n", str_array[i]);
+    }
+
+    int size_tonus;
+    const int64_t *tonus = zl_config_get_array_int64(cfg, GROUP_MAIN, OPT_MAIN_TONUS, &size_tonus);
+    for (int i = 0; i < size_tonus; i++) {
+        printf ("%ld\n", tonus[i]);
+    }
+
+    int size_bools;
+    const bool *bools = zl_config_get_array_int64(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, &size_bools);
+    for (int i = 0; i < size_bools; i++) {
+        printf ("%d\n", bools[i]);
+    }
+
 }
 ```
 
@@ -118,4 +156,13 @@ int main() {
 ```commandline
 port: 8000
 coin: BTC and "trust network" and simple hello
+most powerful
+better
+high top
+124
+364
+512
+1
+0
+0
 ```

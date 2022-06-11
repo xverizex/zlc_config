@@ -46,6 +46,22 @@ const char *zl_config_get_string (struct zl_config *cfg, int group, int name) {
     return cfg->group[group].opt[name].v.val_str;
 }
 
+const char **zl_config_get_array_string (struct zl_config *cfg, int group, int name, int *size) {
+    *size = cfg->group[group].opt[name].size_array;
+    return cfg->group[group].opt[name].v.val_array_str;
+
+}
+
+const bool *zl_config_get_array_bool (struct zl_config *cfg, int group, int name, int *size) {
+    *size = cfg->group[group].opt[name].size_array;
+    return cfg->group[group].opt[name].v.val_array_bool;
+}
+
+const int64_t *zl_config_get_array_int64 (struct zl_config *cfg, int group, int name, int *size) {
+    *size = cfg->group[group].opt[name].size_array;
+    return cfg->group[group].opt[name].v.val_array_int64;
+}
+
 static bool parse_bool (char *data, int *error, int *pos) {
     *error = 0;
     *pos = 0;
@@ -209,6 +225,210 @@ static char *parse_string (char *data, int *error, int *pos) {
     return str;
 }
 
+static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
+    *error = 0;
+    *coun = 0;
+
+    if (data[0] != '[') {
+        *error = ZL_ERROR_PARSE_ARRAY_STRING;
+        return NULL;
+    }
+
+    char temp_e = 0;
+    char temp_s = 0;
+    char *temp_r = 0;
+    char *e = strchr (data, '\n');
+    if (e) {
+        temp_e = *e;
+        *e = 0;
+        *pos = e - data;
+    }
+
+    int len = strlen (data);
+
+    int count = 1;
+    for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
+        if (data[i] == ',') count++;
+    }
+
+    char **str = calloc (count, sizeof (void *));
+    int index_str = 0;
+
+    int i = 1;
+    while (data[i] == ' ') i++;
+    int start = i;
+    for (; data[i] != '\0' && i < len; i++) {
+        if (data[i] == ',' || data[i] == ']') {
+            int len = i - start;
+            str[index_str] = calloc (len + 1, 1);
+            strncpy (str[index_str], &data[start], len);
+            index_str++;
+            if (data[i] == ']') break;
+            i++;
+            while (data[i] == ' ') i++;
+            start = i;
+
+        }
+    }
+
+    *coun = count;
+
+    return str;
+}
+
+static bool *parse_array_bool (char *data, int *error, int *pos, int *coun) {
+    *error = 0;
+    *coun = 0;
+
+    if (data[0] != '[') {
+        *error = ZL_ERROR_PARSE_ARRAY_STRING;
+        return NULL;
+    }
+
+    char temp_e = 0;
+    char temp_s = 0;
+    char *temp_r = 0;
+    char *e = strchr (data, '\n');
+    if (e) {
+        temp_e = *e;
+        *e = 0;
+        *pos = e - data;
+    }
+
+    int len = strlen (data);
+
+    int count = 1;
+    for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
+        if (data[i] == ',') count++;
+    }
+
+    char **str = calloc (count, sizeof (void *));
+    int index_str = 0;
+
+    int i = 1;
+    while (data[i] == ' ') i++;
+    int start = i;
+    for (; data[i] != '\0' && i < len; i++) {
+        if (data[i] == ',' || data[i] == ']') {
+            int len = i - start;
+            str[index_str] = calloc (len + 1, 1);
+            strncpy (str[index_str], &data[start], len);
+            index_str++;
+            if (data[i] == ']') break;
+            i++;
+            while (data[i] == ' ') i++;
+            start = i;
+
+        }
+    }
+
+    *coun = count;
+
+    for (int i = 0; i < count; i++) {
+        if (!strncmp (str[i], "true", 5) || !strncmp (str[i], "false", 6)) continue;
+
+        for (int i = 0; i < count; i++) {
+            free (str[i]);
+        }
+        free (str);
+        *coun = 0;
+        *error = ZL_ERROR_PARSE_ARRAY_BOOL;
+        str = NULL;
+        goto out;
+    }
+
+    bool *b = calloc (count, sizeof(bool));
+    for (int i = 0; i < count; i++) {
+        if (!strncmp (str[i], "true", 5)) {
+            b[i] = true;
+        } else {
+            b[i] = false;
+        }
+    }
+
+out:
+    return b;
+}
+
+static int64_t *parse_array_int64 (char *data, int *error, int *pos, int *coun) {
+    *error = 0;
+    *coun = 0;
+
+    if (data[0] != '[') {
+        *error = ZL_ERROR_PARSE_ARRAY_INT64;
+        return NULL;
+    }
+
+
+    char temp_e = 0;
+    char temp_s = 0;
+    char *temp_r = 0;
+    char *e = strchr (data, '\n');
+    if (e) {
+        temp_e = *e;
+        *e = 0;
+        *pos = e - data;
+    }
+
+    int len = strlen (data);
+
+
+    int count = 1;
+    for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
+        if (data[i] == ',') count++;
+    }
+
+    char **str = calloc (count, sizeof (void *));
+    int index_str = 0;
+
+    int i = 1;
+    while (data[i] == ' ') i++;
+    int start = i;
+    for (; data[i] != '\0' && i < len; i++) {
+        if (data[i] == ',' || data[i] == ']') {
+            int len = i - start;
+            str[index_str] = calloc (len + 1, 1);
+            strncpy (str[index_str], &data[start], len);
+            index_str++;
+            if (data[i] == ']') break;
+            i++;
+            while (data[i] == ' ') i++;
+            start = i;
+
+        }
+    }
+
+    *coun = count;
+
+    for (int i = 0; i < count; i++) {
+        int len_str_item = strlen (str[i]);
+        int invalid = 0;
+        for (int ii = 0; ii < len_str_item; ii++) {
+            if (str[i][ii] < '0' || str[i][ii] > '9') invalid = 1;
+        }
+
+        if (invalid) {
+            for (int i = 0; i < count; i++) {
+                free (str[i]);
+            }
+            free (str);
+            *coun = 0;
+            *error = ZL_ERROR_PARSE_ARRAY_INT64;
+            str = NULL;
+            goto out;
+        }
+
+    }
+
+    int64_t *b = calloc (count, sizeof(int64_t));
+    for (int i = 0; i < count; i++) {
+        b[i] = atol (str[i]);
+    }
+
+    out:
+    return b;
+}
+
 static int get_index_group (struct zl_config *cfg, const char *name) {
     for (int i = 0; i < cfg->size_group; i++) {
         if (!strncmp (cfg->group[i].name, name, strlen (name) + 1)) return i;
@@ -280,7 +500,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
             free (data);
             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_PARSE_GROUP);
             return ZL_ERROR_PARSE_GROUP;
-        } else if (data[i] == '[') {
+        } else if (data[i] == '[' && state != STATE_END_NAME) {
             state = STATE_NEW_GROUP;
             continue;
         }
@@ -401,7 +621,81 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         opi = 0;
                     }
                         break;
+                    case ZL_TYPE_ARRAY_STRING:
+                    {
+                        int error;
+                        int pos;
+                        int count = 0;
+                        char **ret = parse_array_string(&data[i], &error, &pos, &count);
+                        i += pos;
+                        if (error < 0) {
+                            free (data);
+                            if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            return error;
+                        }
+
+                        if (cfg->group[index_group].opt[index_opt].v.val_array_str) {
+                            struct option *opt = &cfg->group[index_group].opt[index_opt];
+                            for (int i = 0; i < opt->size_array; i++) {
+                                free (opt->v.val_array_str[i]);
+                            }
+                            free (opt->v.val_array_str);
+                            cfg->group[index_group].opt[index_opt].v.val_array_str = NULL;
+                        }
+                        cfg->group[index_group].opt[index_opt].v.val_array_str = ret;
+                        cfg->group[index_group].opt[index_opt].size_array = count;
+                        state = STATE_NEW_NAME;
+                        opi = 0;
+                    }
+                    break;
+                    case ZL_TYPE_ARRAY_BOOL:
+                    {
+
+                        int error;
+                        int pos;
+                        int count = 0;
+                        bool *ret = parse_array_bool(&data[i], &error, &pos, &count);
+                        i += pos;
+                        if (error < 0) {
+                            free (data);
+                            if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            return error;
+                        }
+
+                        if (cfg->group[index_group].opt[index_opt].v.val_array_bool) {
+                            free (cfg->group[index_group].opt[index_opt].v.val_array_bool);
+                        }
+                        cfg->group[index_group].opt[index_opt].v.val_array_bool = ret;
+                        cfg->group[index_group].opt[index_opt].size_array = count;
+                        state = STATE_NEW_NAME;
+                        opi = 0;
+                    }
+                    break;
+                    case ZL_TYPE_ARRAY_INT64:
+                    {
+
+                        int error;
+                        int pos;
+                        int count = 0;
+                        int64_t *ret = parse_array_int64(&data[i], &error, &pos, &count);
+                        i += pos;
+                        if (error < 0) {
+                            free (data);
+                            if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            return error;
+                        }
+
+                        if (cfg->group[index_group].opt[index_opt].v.val_array_int64) {
+                            free (cfg->group[index_group].opt[index_opt].v.val_array_int64);
+                        }
+                        cfg->group[index_group].opt[index_opt].v.val_array_int64 = ret;
+                        cfg->group[index_group].opt[index_opt].size_array = count;
+                        state = STATE_NEW_NAME;
+                        opi = 0;
+                    }
+                        break;
                 }
+
                 break;
         }
 

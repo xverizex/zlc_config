@@ -17,13 +17,20 @@ enum ZLErrors {
     ZL_ERROR_INT32 = -6,
     ZL_ERROR_INT64 = -7,
     ZL_ERROR_STRING = -8,
-    ZL_ERROR_PARSE_STRING = -9
+    ZL_ERROR_PARSE_STRING = -9,
+    ZL_ERROR_PARSE_ARRAY_STRING = -10,
+    ZL_ERROR_PARSE_ARRAY_BOOL = -11,
+    ZL_ERROR_PARSE_ARRAY_INT64 = -12
 };
 enum ZLTypeName {
     ZL_TYPE_BOOL,
     ZL_TYPE_INT32,
     ZL_TYPE_INT64,
-    ZL_TYPE_STRING
+    ZL_TYPE_STRING,
+    ZL_TYPE_ARRAY_INT32,
+    ZL_TYPE_ARRAY_INT64,
+    ZL_TYPE_ARRAY_BOOL,
+    ZL_TYPE_ARRAY_STRING
 };
 
 struct zl_config {
@@ -42,5 +49,11 @@ bool zl_config_get_bool (struct zl_config *cfg, int group, int name);
 int32_t zl_config_get_int32 (struct zl_config *cfg, int group, int name);
 int64_t zl_config_get_int64 (struct zl_config *cfg, int group, int name);
 const char *zl_config_get_string (struct zl_config *cfg, int group, int name);
+const char **zl_config_get_array_string (struct zl_config *cfg, int group, int name, int *size);
+const bool *zl_config_get_array_bool (struct zl_config *cfg, int group, int name, int *size);
+const int64_t *zl_config_get_array_int64 (struct zl_config *cfg, int group, int name, int *size);
+
+
+
 
 #endif //ZL_CONFIG_EXAMPLE_CONFIG_H

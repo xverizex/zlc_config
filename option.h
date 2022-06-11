@@ -17,9 +17,12 @@ struct option {
         int64_t val_int64;
         int64_t val_int64_array;
         char *val_str;
-        char **val_array;
+        char **val_array_str;
+        bool *val_array_bool;
+        int64_t *val_array_int64;
     } v;
     char *name;
+    int size_array;
 };
 
 #endif //ZL_CONFIG_EXAMPLE_OPTION_H
