@@ -7,24 +7,46 @@
 #include <string.h>
 #include <stdio.h>
 
+
 struct zl_config *zl_config_init (int size_groups) {
     struct zl_config *cfg = calloc (1, sizeof (struct zl_config));
     cfg->group = calloc (size_groups, sizeof (struct group));
     cfg->size_group = size_groups;
     cfg->config_file = NULL;
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    memcpy (&cfg->mutex, &mutex, sizeof (mutex));
+
+    pthread_mutex_init(&cfg->mutex, NULL);
     return cfg;
 }
 
 void zl_config_init_group (struct zl_config *cfg, int group, const char *name, int size_names) {
+    pthread_mutex_lock(&cfg->mutex);
+    if (cfg->group[group].opt) {
+        free (cfg->group[group].opt);
+    }
+    if (cfg->group[group].name) {
+        free (cfg->group[group].name);
+    }
     cfg->group[group].opt = calloc (size_names, sizeof (struct option));
     cfg->group[group].name = strdup (name);
     cfg->group[group].size_opt = size_names;
+    pthread_mutex_unlock(&cfg->mutex);
+}
+
+void zl_config_set_filepath (struct zl_config *cfg, const char *filepath) {
+    pthread_mutex_lock(&cfg->mutex);
+    if (cfg->config_file) free (cfg->config_file);
+    cfg->config_file = strdup (filepath);
+    pthread_mutex_unlock(&cfg->mutex);
 }
 
 void zl_config_set_comment_option (struct zl_config *cfg, int group, int opt, const char *comment) {
+    pthread_mutex_lock(&cfg->mutex);
     struct option *option = &cfg->group[group].opt[opt];
     if (option->comment) free (option->comment);
     option->comment = strdup (comment);
+    pthread_mutex_unlock(&cfg->mutex);
 }
 
 static void print_value_option (FILE *fp, struct group *g, int opt) {
@@ -103,6 +125,8 @@ static void print_value_option (FILE *fp, struct group *g, int opt) {
 }
 
 int zl_config_save (struct zl_config *cfg) {
+    pthread_mutex_lock(&cfg->mutex);
+
     FILE *fp = fopen (cfg->config_file, "w");
 
     for (int grp = 0; grp < cfg->size_group; grp++) {
@@ -120,9 +144,13 @@ int zl_config_save (struct zl_config *cfg) {
     }
 
     fclose (fp);
+
+    pthread_mutex_unlock(&cfg->mutex);
 }
 
 void zl_config_add_option (struct zl_config *cfg, int group, int name, int type, const char *str_name, void *default_value) {
+    pthread_mutex_lock(&cfg->mutex);
+
     cfg->group[group].opt[name].type = type;
     cfg->group[group].opt[name].name = strdup (str_name);
     switch(type) {
@@ -137,6 +165,8 @@ void zl_config_add_option (struct zl_config *cfg, int group, int name, int type,
         default:
             break;
     }
+
+    pthread_mutex_unlock(&cfg->mutex);
 }
 
 void zl_config_set_error_func (struct zl_config *cfg, void (*func) (struct zl_config *cfg, int group, int opt, int error)) {
@@ -145,35 +175,53 @@ void zl_config_set_error_func (struct zl_config *cfg, void (*func) (struct zl_co
 
 
 bool zl_config_get_bool (struct zl_config *cfg, int group, int name) {
-    return cfg->group[group].opt[name].v.val_bool;
+    pthread_mutex_lock(&cfg->mutex);
+    bool val = cfg->group[group].opt[name].v.val_bool;
+    pthread_mutex_unlock(&cfg->mutex);
+    return val;
 }
 
 int32_t zl_config_get_int32 (struct zl_config *cfg, int group, int name) {
-    return cfg->group[group].opt[name].v.val_int32;
+    pthread_mutex_lock(&cfg->mutex);
+    int32_t val = cfg->group[group].opt[name].v.val_int32;
+    pthread_mutex_unlock(&cfg->mutex);
 }
 
 int64_t zl_config_get_int64 (struct zl_config *cfg, int group, int name) {
-    return cfg->group[group].opt[name].v.val_int64;
+    pthread_mutex_lock(&cfg->mutex);
+    int64_t val = cfg->group[group].opt[name].v.val_int64;
+    pthread_mutex_unlock(&cfg->mutex);
+    return val;
 }
 
 const char *zl_config_get_string (struct zl_config *cfg, int group, int name) {
-    return cfg->group[group].opt[name].v.val_str;
+    pthread_mutex_lock(&cfg->mutex);
+    const char *str = cfg->group[group].opt[name].v.val_str;
+    pthread_mutex_unlock(&cfg->mutex);
+    return str;
 }
 
 const char **zl_config_get_array_string (struct zl_config *cfg, int group, int name, int *size) {
+    pthread_mutex_lock(&cfg->mutex);
     *size = cfg->group[group].opt[name].size_array;
-    return cfg->group[group].opt[name].v.val_array_str;
-
+    char **val = cfg->group[group].opt[name].v.val_array_str;
+    pthread_mutex_unlock(&cfg->mutex);
+    return val;
 }
 
 const bool *zl_config_get_array_bool (struct zl_config *cfg, int group, int name, int *size) {
+    pthread_mutex_lock(&cfg->mutex);
     *size = cfg->group[group].opt[name].size_array;
-    return cfg->group[group].opt[name].v.val_array_bool;
+    bool *val = cfg->group[group].opt[name].v.val_array_bool;
+    pthread_mutex_unlock(&cfg->mutex);
 }
 
 const int64_t *zl_config_get_array_int64 (struct zl_config *cfg, int group, int name, int *size) {
+    pthread_mutex_lock(&cfg->mutex);
     *size = cfg->group[group].opt[name].size_array;
-    return cfg->group[group].opt[name].v.val_array_int64;
+    int64_t *val = cfg->group[group].opt[name].v.val_array_int64;
+    pthread_mutex_unlock(&cfg->mutex);
+    return val;
 }
 
 static bool parse_bool (char *data, int *error, int *pos) {
@@ -652,6 +700,7 @@ static char *get_data_file (const char *filepath, size_t *size_file) {
 
 
 int zl_config_parse (struct zl_config *cfg, const char *filepath) {
+    pthread_mutex_lock(&cfg->mutex);
     if (cfg->config_file) {
         free (cfg->config_file);
     }
@@ -687,6 +736,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
         if ((data[i] == '\r' || data[i] == '\n')) {
             if (gri > 0) {
                 if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_PARSE_GROUP);
+                pthread_mutex_unlock(&cfg->mutex);
                 return ZL_ERROR_PARSE_GROUP;
             }
             continue;
@@ -694,6 +744,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
         if (data[i] == '[' && gri != 0) {
             free (data);
             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_PARSE_GROUP);
+            pthread_mutex_unlock(&cfg->mutex);
             return ZL_ERROR_PARSE_GROUP;
         } else if (data[i] == '[' && state != STATE_END_NAME) {
             state = STATE_NEW_GROUP;
@@ -703,6 +754,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
         if (data[i] == ']' && gri == 0) {
             free (data);
             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_PARSE_GROUP);
+            pthread_mutex_unlock(&cfg->mutex);
             return ZL_ERROR_PARSE_GROUP;
         } else if (data[i] == ']'){
             state = STATE_END_GROUP;
@@ -720,6 +772,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                 if (index_group == -1) {
                     free (data);
                     if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_UNKNOWN_GROUP);
+                    pthread_mutex_unlock(&cfg->mutex);
                     return ZL_ERROR_UNKNOWN_GROUP;
                 }
                 cfg->group[index_group].name = strdup (group_name);
@@ -738,6 +791,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (index_opt == -1) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_UNKNOWN_NAME);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return ZL_ERROR_UNKNOWN_NAME;
                         }
                         break;
@@ -758,6 +812,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
                         cfg->group[index_group].opt[index_opt].v.val_bool = ret;
@@ -774,6 +829,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
 
@@ -791,6 +847,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
 
@@ -808,6 +865,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
 
@@ -827,6 +885,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
 
@@ -855,6 +914,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
 
@@ -878,6 +938,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         if (error < 0) {
                             free (data);
                             if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, error);
+                            pthread_mutex_unlock(&cfg->mutex);
                             return error;
                         }
 
@@ -896,4 +957,6 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
         }
 
     }
+
+    pthread_mutex_unlock(&cfg->mutex);
 }

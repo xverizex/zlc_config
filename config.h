@@ -11,6 +11,7 @@ extern "C" {
 
 #include "option.h"
 #include "group.h"
+#include <pthread.h>
 
 enum ZLErrors {
     ZL_ERROR_PARSE_GROUP = -1,
@@ -42,12 +43,14 @@ struct zl_config {
     char *config_file;
     struct group *group;
     int size_group;
+    pthread_mutex_t mutex;
 
     void (*error_func)(struct zl_config *cfg, int group, int opt, int error);
 };
 
 struct zl_config *zl_config_init(int size_groups);
 void zl_config_set_error_func(struct zl_config *cfg, void (*)(struct zl_config *cfg, int group, int opt, int error));
+void zl_config_set_filepath (struct zl_config *cfg, const char *filepath);
 int zl_config_parse(struct zl_config *cfg, const char *filepath);
 void zl_config_init_group(struct zl_config *cfg, int group, const char *name, int size_names);
 void zl_config_add_option(struct zl_config *cfg, int group, int name, int type, const char *str_name, void *default_value);
