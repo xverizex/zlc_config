@@ -39,7 +39,7 @@ Now, init a config structure and initialize groups and options.
     zl_config_add_option(cfg, GROUP_NET, OPT_NET_PORT, ZL_TYPE_INT32, "port");
 
     zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
-zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
 
     zl_config_parse(cfg, "../test.conf");
 ```
