@@ -395,7 +395,7 @@ static bool *parse_array_bool (char *data, int *error, int *pos, int *coun) {
             int len = i - start;
             str[index_str] = calloc (len + 1, 1);
             strncpy (str[index_str], &data[start], len);
-            char *e = strchr (str[index_str], ' ');
+            char *e = strrchr (str[index_str], ' ');
             if (e) *e = 0;
             index_str++;
             if (data[i] == ']') break;
@@ -475,7 +475,7 @@ static int64_t *parse_array_int64 (char *data, int *error, int *pos, int *coun) 
             int len = i - start;
             str[index_str] = calloc (len + 1, 1);
             strncpy (str[index_str], &data[start], len);
-            char *e = strchr (str[index_str], ' ');
+            char *e = strrchr (str[index_str], ' ');
             if (e) *e = 0;
             index_str++;
             if (data[i] == ']') break;
