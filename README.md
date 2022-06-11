@@ -14,9 +14,9 @@ port = 8000
 debug = true
 count = 16384
 coin = "BTC and \"trust network\" and simple hello"
-private = [ "most \"powerful\"",   "better"  , "high top"]
-tonus = [124, 364, 512]
-bools = [true, false, false]
+private = [ "most \"powerful\"" ,   "better"  , "high top"]
+tonus = [ 124 , 364 , 512 ]
+bools = [ true , false , false ]
 ```
 
 Define enum groups and options for each group.
@@ -55,17 +55,16 @@ Now, init a config structure and initialize groups and options.
     zl_config_init_group(cfg, GROUP_NET, "Net", N_NET_OPTS);
     zl_config_init_group(cfg, GROUP_MAIN, "Main", N_MAIN_OPTS);
 
-    zl_config_add_option(cfg, GROUP_NET, OPT_NET_DEBUG, ZL_TYPE_BOOL, "debug");
-    zl_config_add_option(cfg, GROUP_NET, OPT_NET_PORT, ZL_TYPE_INT32, "port");
+    zl_config_add_option(cfg, GROUP_NET, OPT_NET_DEBUG, ZL_TYPE_BOOL, "debug", NULL);
+    zl_config_add_option(cfg, GROUP_NET, OPT_NET_PORT, ZL_TYPE_INT32, "port", NULL);
 
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, ZL_TYPE_ARRAY_STRING, "private");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_TONUS, ZL_TYPE_ARRAY_INT64, "tonus");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, ZL_TYPE_ARRAY_BOOL, "bools");
-
-    zl_config_parse(cfg, "../test.conf");
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug", true);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, ZL_TYPE_ARRAY_STRING, "private", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_TONUS, ZL_TYPE_ARRAY_INT64, "tonus", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, ZL_TYPE_ARRAY_BOOL, "bools", NULL);
+    zl_config_parse(cfg, "../tests.conf");
 ```
 Now, you are to possible get a config value.
 ```c++
@@ -76,6 +75,7 @@ Now, you are to possible get a config value.
 ```c++
 #include <stdio.h>
 #include "zlc_config/config.h"
+
 
 enum Groups {
     GROUP_NET,
@@ -108,17 +108,15 @@ int main() {
     zl_config_init_group(cfg, GROUP_NET, "Net", N_NET_OPTS);
     zl_config_init_group(cfg, GROUP_MAIN, "Main", N_MAIN_OPTS);
 
-    zl_config_add_option(cfg, GROUP_NET, OPT_NET_DEBUG, ZL_TYPE_BOOL, "debug");
-    zl_config_add_option(cfg, GROUP_NET, OPT_NET_PORT, ZL_TYPE_INT32, "port");
+    zl_config_add_option(cfg, GROUP_NET, OPT_NET_DEBUG, ZL_TYPE_BOOL, "debug", NULL);
+    zl_config_add_option(cfg, GROUP_NET, OPT_NET_PORT, ZL_TYPE_INT32, "port", NULL);
 
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, ZL_TYPE_ARRAY_STRING, "private");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_TONUS, ZL_TYPE_ARRAY_INT64, "tonus");
-    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, ZL_TYPE_ARRAY_BOOL, "bools");
-
-
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_DEBUG, ZL_TYPE_BOOL, "debug", true);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COUNT, ZL_TYPE_INT32, "count", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_COIN, ZL_TYPE_STRING, "coin", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_PRIVATE, ZL_TYPE_ARRAY_STRING, "private", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_TONUS, ZL_TYPE_ARRAY_INT64, "tonus", NULL);
+    zl_config_add_option(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, ZL_TYPE_ARRAY_BOOL, "bools", NULL);
 
 
 
@@ -126,9 +124,11 @@ int main() {
 
     int port = zl_config_get_int32(cfg, GROUP_NET, OPT_NET_PORT);
     const char *coin = zl_config_get_string(cfg, GROUP_MAIN, OPT_MAIN_COIN);
+    bool debug_main = zl_config_get_bool(cfg, GROUP_MAIN, OPT_MAIN_DEBUG);
 
     printf ("port: %d\n", port);
     printf ("coin: %s\n", coin);
+    printf ("debug_main: %d\n", debug_main);
 
     /* print arrays */
     int size_private;
@@ -144,18 +144,20 @@ int main() {
     }
 
     int size_bools;
-    const bool *bools = zl_config_get_array_int64(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, &size_bools);
+    const bool *bools = zl_config_get_array_bool(cfg, GROUP_MAIN, OPT_MAIN_BOOLS, &size_bools);
     for (int i = 0; i < size_bools; i++) {
         printf ("%d\n", bools[i]);
     }
 
 }
+
 ```
 
 # Output
 ```commandline
 port: 8000
 coin: BTC and "trust network" and simple hello
+debug_main: 1
 most "powerful"
 better
 high top

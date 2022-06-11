@@ -5,6 +5,10 @@
 #ifndef ZL_CONFIG_EXAMPLE_CONFIG_H
 #define ZL_CONFIG_EXAMPLE_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "option.h"
 #include "group.h"
 
@@ -36,24 +40,26 @@ enum ZLTypeName {
 struct zl_config {
     struct group *group;
     int size_group;
-    void (*error_func) (struct zl_config *cfg, int group, int opt, int error);
+
+    void (*error_func)(struct zl_config *cfg, int group, int opt, int error);
 };
 
-struct zl_config *zl_config_init (int size_groups);
-void zl_config_set_error_func (struct zl_config *cfg, void (*) (struct zl_config *cfg, int group, int opt, int error));
-int zl_config_parse (struct zl_config *cfg, const char *filepath);
-void zl_config_init_group (struct zl_config *cfg, int group, const char *name, int size_names);
-void zl_config_add_option (struct zl_config *cfg, int group, int name, int type, const char *str_name);
-const char *zl_config_str_error (struct zl_config *cfg, const int err);
-bool zl_config_get_bool (struct zl_config *cfg, int group, int name);
-int32_t zl_config_get_int32 (struct zl_config *cfg, int group, int name);
-int64_t zl_config_get_int64 (struct zl_config *cfg, int group, int name);
-const char *zl_config_get_string (struct zl_config *cfg, int group, int name);
-const char **zl_config_get_array_string (struct zl_config *cfg, int group, int name, int *size);
-const bool *zl_config_get_array_bool (struct zl_config *cfg, int group, int name, int *size);
-const int64_t *zl_config_get_array_int64 (struct zl_config *cfg, int group, int name, int *size);
+struct zl_config *zl_config_init(int size_groups);
+void zl_config_set_error_func(struct zl_config *cfg, void (*)(struct zl_config *cfg, int group, int opt, int error));
+int zl_config_parse(struct zl_config *cfg, const char *filepath);
+void zl_config_init_group(struct zl_config *cfg, int group, const char *name, int size_names);
+void zl_config_add_option(struct zl_config *cfg, int group, int name, int type, const char *str_name, void *default_value);
+const char *zl_config_str_error(struct zl_config *cfg, const int err);
+bool zl_config_get_bool(struct zl_config *cfg, int group, int name);
+int32_t zl_config_get_int32(struct zl_config *cfg, int group, int name);
+int64_t zl_config_get_int64(struct zl_config *cfg, int group, int name);
+const char *zl_config_get_string(struct zl_config *cfg, int group, int name);
+const char **zl_config_get_array_string(struct zl_config *cfg, int group, int name, int *size);
+const bool *zl_config_get_array_bool(struct zl_config *cfg, int group, int name, int *size);
+const int64_t *zl_config_get_array_int64(struct zl_config *cfg, int group, int name, int *size);
 
-
-
+#ifdef __cplusplus
+};
+#endif
 
 #endif //ZL_CONFIG_EXAMPLE_CONFIG_H

@@ -20,9 +20,21 @@ void zl_config_init_group (struct zl_config *cfg, int group, const char *name, i
     cfg->group[group].size_opt = size_names;
 }
 
-void zl_config_add_option (struct zl_config *cfg, int group, int name, int type, const char *str_name) {
+void zl_config_add_option (struct zl_config *cfg, int group, int name, int type, const char *str_name, void *default_value) {
     cfg->group[group].opt[name].type = type;
     cfg->group[group].opt[name].name = strdup (str_name);
+    switch(type) {
+        case ZL_TYPE_INT32: cfg->group[group].opt[name].v.val_int32 = default_value ? (int32_t) default_value: 0; break;
+        case ZL_TYPE_INT64: cfg->group[group].opt[name].v.val_int64 = default_value ? (int64_t) default_value: 0L; break;
+        case ZL_TYPE_BOOL: cfg->group[group].opt[name].v.val_bool = default_value ? ((bool) default_value): false; break;
+        case ZL_TYPE_STRING: cfg->group[group].opt[name].v.val_str = default_value ? (char *) default_value: NULL; break;
+        case ZL_TYPE_ARRAY_BOOL: cfg->group[group].opt[name].v.val_array_bool = default_value ? (bool *) default_value: NULL; break;
+        case ZL_TYPE_ARRAY_INT32: cfg->group[group].opt[name].v.val_int32_array = default_value ? (int32_t *) default_value: NULL; break;
+        case ZL_TYPE_ARRAY_INT64: cfg->group[group].opt[name].v.val_int64_array = default_value ? (int64_t *) default_value: NULL; break;
+        case ZL_TYPE_ARRAY_STRING: cfg->group[group].opt[name].v.val_array_str = default_value ? (char **) default_value: NULL; break;
+        default:
+            break;
+    }
 }
 
 void zl_config_set_error_func (struct zl_config *cfg, void (*func) (struct zl_config *cfg, int group, int opt, int error)) {
@@ -378,10 +390,13 @@ static bool *parse_array_bool (char *data, int *error, int *pos, int *coun) {
     while (data[i] == ' ') i++;
     int start = i;
     for (; data[i] != '\0' && i < len; i++) {
+        while (data[i] == ' ') i++;
         if (data[i] == ',' || data[i] == ']') {
             int len = i - start;
             str[index_str] = calloc (len + 1, 1);
             strncpy (str[index_str], &data[start], len);
+            char *e = strchr (str[index_str], ' ');
+            if (e) *e = 0;
             index_str++;
             if (data[i] == ']') break;
             i++;
@@ -392,6 +407,7 @@ static bool *parse_array_bool (char *data, int *error, int *pos, int *coun) {
     }
 
     *coun = count;
+
 
     for (int i = 0; i < count; i++) {
         if (!strncmp (str[i], "true", 5) || !strncmp (str[i], "false", 6)) continue;
@@ -454,10 +470,13 @@ static int64_t *parse_array_int64 (char *data, int *error, int *pos, int *coun) 
     while (data[i] == ' ') i++;
     int start = i;
     for (; data[i] != '\0' && i < len; i++) {
+        while (data[i] == ' ') i++;
         if (data[i] == ',' || data[i] == ']') {
             int len = i - start;
             str[index_str] = calloc (len + 1, 1);
             strncpy (str[index_str], &data[start], len);
+            char *e = strchr (str[index_str], ' ');
+            if (e) *e = 0;
             index_str++;
             if (data[i] == ']') break;
             i++;
