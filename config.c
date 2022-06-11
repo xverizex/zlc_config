@@ -11,6 +11,7 @@ struct zl_config *zl_config_init (int size_groups) {
     struct zl_config *cfg = calloc (1, sizeof (struct zl_config));
     cfg->group = calloc (size_groups, sizeof (struct group));
     cfg->size_group = size_groups;
+    cfg->config_file = NULL;
     return cfg;
 }
 
@@ -18,6 +19,107 @@ void zl_config_init_group (struct zl_config *cfg, int group, const char *name, i
     cfg->group[group].opt = calloc (size_names, sizeof (struct option));
     cfg->group[group].name = strdup (name);
     cfg->group[group].size_opt = size_names;
+}
+
+void zl_config_set_comment_option (struct zl_config *cfg, int group, int opt, const char *comment) {
+    struct option *option = &cfg->group[group].opt[opt];
+    if (option->comment) free (option->comment);
+    option->comment = strdup (comment);
+}
+
+static void print_value_option (FILE *fp, struct group *g, int opt) {
+    switch (g->opt[opt].type) {
+        case ZL_TYPE_ARRAY_STRING:
+            fprintf (fp, "[");
+            for (int i = 0; i < g->opt[opt].size_array; i++) {
+                char *val = g->opt[opt].v.val_array_str[i];
+                int len = strlen (val);
+                fprintf (fp, "\"");
+                for (int l = 0; l < len; l++) {
+                    if (val[l] == '"') fprintf (fp, "\\");
+                    fprintf (fp, "%c", val[l]);
+                }
+                fprintf (fp, "\"");
+                if ((i + 1) < g->opt[opt].size_array) fprintf (fp, ", ");
+            }
+            fprintf (fp, "]");
+            fprintf (fp, "\n");
+            break;
+        case ZL_TYPE_ARRAY_INT64:
+            fprintf (fp, "[");
+            for (int i = 0; i < g->opt[opt].size_array; i++) {
+                fprintf (fp, "%ld", g->opt[opt].v.val_array_int64[i]);
+                if ((i + 1) < g->opt[opt].size_array) fprintf (fp, ", ");
+            }
+            fprintf (fp, "]");
+            fprintf (fp, "\n");
+            break;
+        case ZL_TYPE_ARRAY_INT32:
+            fprintf (fp, "[");
+            for (int i = 0; i < g->opt[opt].size_array; i++) {
+                fprintf (fp, "%d", g->opt[opt].v.val_array_int32[i]);
+                if ((i + 1) < g->opt[opt].size_array) fprintf (fp, ", ");
+            }
+            fprintf (fp, "]");
+            fprintf (fp, "\n");
+            break;
+        case ZL_TYPE_ARRAY_BOOL:
+            fprintf (fp, "[");
+            for (int i = 0; i < g->opt[opt].size_array; i++) {
+                fprintf (fp, "%s", g->opt[opt].v.val_array_bool[i] == 0 ? "false" : "true");
+                if ((i + 1) < g->opt[opt].size_array) fprintf (fp, ", ");
+            }
+            fprintf (fp, "]");
+            fprintf (fp, "\n");
+            break;
+        case ZL_TYPE_STRING:
+        {
+            char *val = g->opt[opt].v.val_str;
+            int len = strlen (val);
+            fprintf (fp, "\"");
+            for (int l = 0; l < len; l++) {
+                if (val[l] == '"') fprintf (fp, "\\");
+                fprintf (fp, "%c", val[l]);
+            }
+            fprintf (fp, "\"");
+            fprintf (fp, "\n");
+        }
+            break;
+        case ZL_TYPE_BOOL:
+            fprintf (fp, "%s", g->opt[opt].v.val_bool == 0 ? "false" : "true");
+            fprintf (fp, "\n");
+            break;
+        case ZL_TYPE_INT32:
+            fprintf (fp, "%d", g->opt[opt].v.val_int32);
+            fprintf (fp, "\n");
+            break;
+        case ZL_TYPE_INT64:
+            fprintf (fp, "%ld", g->opt[opt].v.val_int64);
+            fprintf (fp, "\n");
+            break;
+        default:
+            break;
+    }
+}
+
+int zl_config_save (struct zl_config *cfg) {
+    FILE *fp = fopen (cfg->config_file, "w");
+
+    for (int grp = 0; grp < cfg->size_group; grp++) {
+        fprintf (fp, "[%s]\n", cfg->group[grp].name);
+
+        struct group *g = &cfg->group[grp];
+        /* save all options */
+        for (int opt = 0; opt < g->size_opt; opt++) {
+            if (g->opt[opt].comment) {
+                fprintf (fp, "# %s\n", g->opt[opt].comment);
+            }
+            fprintf (fp, "%s = ", g->opt[opt].name);
+            print_value_option (fp, g, opt);
+        }
+    }
+
+    fclose (fp);
 }
 
 void zl_config_add_option (struct zl_config *cfg, int group, int name, int type, const char *str_name, void *default_value) {
@@ -29,8 +131,8 @@ void zl_config_add_option (struct zl_config *cfg, int group, int name, int type,
         case ZL_TYPE_BOOL: cfg->group[group].opt[name].v.val_bool = default_value ? ((bool) default_value): false; break;
         case ZL_TYPE_STRING: cfg->group[group].opt[name].v.val_str = default_value ? (char *) default_value: NULL; break;
         case ZL_TYPE_ARRAY_BOOL: cfg->group[group].opt[name].v.val_array_bool = default_value ? (bool *) default_value: NULL; break;
-        case ZL_TYPE_ARRAY_INT32: cfg->group[group].opt[name].v.val_int32_array = default_value ? (int32_t *) default_value: NULL; break;
-        case ZL_TYPE_ARRAY_INT64: cfg->group[group].opt[name].v.val_int64_array = default_value ? (int64_t *) default_value: NULL; break;
+        case ZL_TYPE_ARRAY_INT32: cfg->group[group].opt[name].v.val_array_int32 = default_value ? (int32_t *) default_value: NULL; break;
+        case ZL_TYPE_ARRAY_INT64: cfg->group[group].opt[name].v.val_array_int64 = default_value ? (int64_t *) default_value: NULL; break;
         case ZL_TYPE_ARRAY_STRING: cfg->group[group].opt[name].v.val_array_str = default_value ? (char **) default_value: NULL; break;
         default:
             break;
@@ -550,6 +652,11 @@ static char *get_data_file (const char *filepath, size_t *size_file) {
 
 
 int zl_config_parse (struct zl_config *cfg, const char *filepath) {
+    if (cfg->config_file) {
+        free (cfg->config_file);
+    }
+    cfg->config_file = strdup (filepath);
+
     size_t size_file = 0L;
     char *data = get_data_file(filepath, &size_file);
 
@@ -615,6 +722,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                     if (cfg->error_func) cfg->error_func (cfg, index_group, index_opt, ZL_ERROR_UNKNOWN_GROUP);
                     return ZL_ERROR_UNKNOWN_GROUP;
                 }
+                cfg->group[index_group].name = strdup (group_name);
                 break;
             case STATE_NEW_NAME:
                 if ((data[i] == ' ' || data[i] == '=') && opi == 0) {

@@ -24,7 +24,8 @@ enum ZLErrors {
     ZL_ERROR_PARSE_STRING = -9,
     ZL_ERROR_PARSE_ARRAY_STRING = -10,
     ZL_ERROR_PARSE_ARRAY_BOOL = -11,
-    ZL_ERROR_PARSE_ARRAY_INT64 = -12
+    ZL_ERROR_PARSE_ARRAY_INT64 = -12,
+    ZL_ERROR_CONFIG_SAVE = -13
 };
 enum ZLTypeName {
     ZL_TYPE_BOOL,
@@ -38,6 +39,7 @@ enum ZLTypeName {
 };
 
 struct zl_config {
+    char *config_file;
     struct group *group;
     int size_group;
 
@@ -49,6 +51,8 @@ void zl_config_set_error_func(struct zl_config *cfg, void (*)(struct zl_config *
 int zl_config_parse(struct zl_config *cfg, const char *filepath);
 void zl_config_init_group(struct zl_config *cfg, int group, const char *name, int size_names);
 void zl_config_add_option(struct zl_config *cfg, int group, int name, int type, const char *str_name, void *default_value);
+void zl_config_set_comment_option (struct zl_config *cfg, int group, int opt, const char *comment);
+int zl_config_save (struct zl_config *cfg);
 const char *zl_config_str_error(struct zl_config *cfg, const int err);
 bool zl_config_get_bool(struct zl_config *cfg, int group, int name);
 int32_t zl_config_get_int32(struct zl_config *cfg, int group, int name);
