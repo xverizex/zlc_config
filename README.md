@@ -41,7 +41,7 @@ void error_func (struct zl_config *cfg, int group, int opt, int error) {
     printf ("error: %d\n", error);
 }
 ```
-Now, init a config structure and initialize groups and options.
+Now, init config structure and initialize groups and options.
 ```C++
     struct zl_config *cfg = zl_config_init(N_GROUPS);
     zl_config_init_group(cfg, GROUP_NET, "Net", N_NET_OPTS);
