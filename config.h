@@ -45,11 +45,11 @@ struct zl_config {
     int size_group;
     pthread_mutex_t mutex;
 
-    void (*error_func)(struct zl_config *cfg, int group, int opt, int error);
+    void (*error_func)(struct zl_config *cfg, int group, int opt, const char *p_group, const char *p_option, int error);
 };
 
 struct zl_config *zl_config_init(int size_groups);
-void zl_config_set_error_func(struct zl_config *cfg, void (*)(struct zl_config *cfg, int group, int opt, int error));
+void zl_config_set_error_func(struct zl_config *cfg, void (*)(struct zl_config *cfg, int group, int opt, const char *p_group, const char *p_option, int error));
 void zl_config_set_filepath (struct zl_config *cfg, const char *filepath);
 int zl_config_parse(struct zl_config *cfg, const char *filepath);
 void zl_config_init_group(struct zl_config *cfg, int group, const char *name, int size_names);

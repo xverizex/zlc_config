@@ -37,7 +37,7 @@ enum OptionsMain {
 ```
 Also you may to set an error function.
 ```C++
-void error_func (struct zl_config *cfg, int group, int opt, int error) {
+void error_func (struct zl_config *cfg, int group, int opt, const char *p_group, const char *p_opt, int error) {
     printf ("error: %d\n", error);
 }
 ```
