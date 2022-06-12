@@ -730,7 +730,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
     /* parse groups */
     for (int i = 0; i < size_file; i++) {
         if (data[i] == '#') {
-            while (data[i] != '\n') i++;
+            while (data[i] != '\n' && i < size_file) i++;
             continue;
         }
         if ((data[i] == '\r' || data[i] == '\n')) {
