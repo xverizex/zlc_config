@@ -7,10 +7,18 @@
 #include <string.h>
 #include <stdio.h>
 
+struct zl_config {
+    char *config_file;
+    struct zl_group *group;
+    int size_group;
+    pthread_mutex_t mutex;
+
+    void (*error_func)(struct zl_config *cfg, int group, int opt, const char *p_group, const char *p_option, int error);
+};
 
 struct zl_config *zl_config_init (int size_groups) {
     struct zl_config *cfg = calloc (1, sizeof (struct zl_config));
-    cfg->group = calloc (size_groups, sizeof (struct group));
+    cfg->group = calloc (size_groups, sizeof (struct zl_group));
     cfg->size_group = size_groups;
     cfg->config_file = NULL;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -28,7 +36,7 @@ void zl_config_init_group (struct zl_config *cfg, int group, const char *name, i
     if (cfg->group[group].name) {
         free (cfg->group[group].name);
     }
-    cfg->group[group].opt = calloc (size_names, sizeof (struct option));
+    cfg->group[group].opt = calloc (size_names, sizeof (struct zl_option));
     cfg->group[group].name = strdup (name);
     cfg->group[group].size_opt = size_names;
     pthread_mutex_unlock(&cfg->mutex);
@@ -43,13 +51,13 @@ void zl_config_set_filepath (struct zl_config *cfg, const char *filepath) {
 
 void zl_config_set_comment_option (struct zl_config *cfg, int group, int opt, const char *comment) {
     pthread_mutex_lock(&cfg->mutex);
-    struct option *option = &cfg->group[group].opt[opt];
+    struct zl_option *option = &cfg->group[group].opt[opt];
     if (option->comment) free (option->comment);
     option->comment = strdup (comment);
     pthread_mutex_unlock(&cfg->mutex);
 }
 
-static void print_value_option (FILE *fp, struct group *g, int opt) {
+static void print_value_option (FILE *fp, struct zl_group *g, int opt) {
     switch (g->opt[opt].type) {
         case ZL_TYPE_ARRAY_STRING:
             fprintf (fp, "[");
@@ -132,7 +140,7 @@ int zl_config_save (struct zl_config *cfg) {
     for (int grp = 0; grp < cfg->size_group; grp++) {
         fprintf (fp, "[%s]\n", cfg->group[grp].name);
 
-        struct group *g = &cfg->group[grp];
+        struct zl_group *g = &cfg->group[grp];
         /* save all options */
         for (int opt = 0; opt < g->size_opt; opt++) {
             if (g->opt[opt].comment) {
@@ -676,7 +684,7 @@ static int get_index_group (struct zl_config *cfg, const char *name) {
 }
 
 static int get_index_opt (struct zl_config *cfg, int group, const char *name) {
-    struct group *grp = &cfg->group[group];
+    struct zl_group *grp = &cfg->group[group];
     for (int i = 0; i < grp->size_opt; i++) {
         if (!strncmp (grp->opt[i].name, name, strlen (name) + 1)) return i;
     }
@@ -890,7 +898,7 @@ int zl_config_parse (struct zl_config *cfg, const char *filepath) {
                         }
 
                         if (cfg->group[index_group].opt[index_opt].v.val_array_str) {
-                            struct option *opt = &cfg->group[index_group].opt[index_opt];
+                            struct zl_option *opt = &cfg->group[index_group].opt[index_opt];
                             for (int i = 0; i < opt->size_array; i++) {
                                 free (opt->v.val_array_str[i]);
                             }

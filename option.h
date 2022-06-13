@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct option {
+struct zl_option {
     int type;
     union {
         bool val_bool;

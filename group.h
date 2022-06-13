@@ -5,9 +5,9 @@
 #ifndef ZL_CONFIG_EXAMPLE_GROUP_H
 #define ZL_CONFIG_EXAMPLE_GROUP_H
 #include "option.h"
-struct group {
+struct zl_group {
     char *name;
-    struct option *opt;
+    struct zl_option *opt;
     int size_opt;
 
 };

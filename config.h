@@ -39,14 +39,8 @@ enum ZLTypeName {
     ZL_TYPE_ARRAY_STRING
 };
 
-struct zl_config {
-    char *config_file;
-    struct group *group;
-    int size_group;
-    pthread_mutex_t mutex;
+struct zl_config;
 
-    void (*error_func)(struct zl_config *cfg, int group, int opt, const char *p_group, const char *p_option, int error);
-};
 
 struct zl_config *zl_config_init(int size_groups);
 void zl_config_set_error_func(struct zl_config *cfg, void (*)(struct zl_config *cfg, int group, int opt, const char *p_group, const char *p_option, int error));
