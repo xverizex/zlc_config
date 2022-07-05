@@ -695,6 +695,10 @@ static int get_index_opt (struct zl_config *cfg, int group, const char *name) {
 static char *get_data_file (const char *filepath, size_t *size_file) {
     *size_file = 0;
     FILE *fp = fopen (filepath, "r");
+    if (!fp) {
+	    perror ("fopen file config");
+	    return NULL;
+    }
     fseek (fp, 0, SEEK_END);
     *size_file = ftell (fp);
     fseek (fp, 0, SEEK_SET);
