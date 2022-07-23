@@ -471,17 +471,19 @@ static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
 
     int count = 0;
     int state_quote = 0;
+    int sym = 0;
     for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
         if (data[i] == '\\' && data[i + 1] == '"') { i++; continue; }
-        if (data[i] == '"') state_quote++;
+        if (data[i] == '"') { sym = 1; state_quote++; }
         if (data[i] == ',') {
+		sym = 1;
             if (state_quote == 2) {
                 count++;
                 state_quote = 0;
             }
         }
     }
-    count++;
+    if (sym == 1) count++;
 
 
     char **str = calloc (count, sizeof (void *));
@@ -535,10 +537,13 @@ static bool *parse_array_bool (char *data, int *error, int *pos, int *coun) {
 
     int len = strlen (data);
 
-    int count = 1;
+    int count = 0;
+    int sym = 0;
     for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
+	    if (data[i] > 32 && data[i] <= 127) sym = 1;
         if (data[i] == ',') count++;
     }
+    if (sym == 1) count++;
 
     char **str = calloc (count, sizeof (void *));
     int index_str = 0;
@@ -615,10 +620,13 @@ static int64_t *parse_array_int64 (char *data, int *error, int *pos, int *coun) 
     int len = strlen (data);
 
 
-    int count = 1;
+    int count = 0;
+    int sym = 0;
     for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
+	    if (data[i] > 32 && data[i] < 127) sym = 1;
         if (data[i] == ',') count++;
     }
+    if (sym == 1) count++;
 
     char **str = calloc (count, sizeof (void *));
     int index_str = 0;
