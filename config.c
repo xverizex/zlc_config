@@ -487,6 +487,11 @@ static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
 
 
     char **str = calloc (count, sizeof (void *));
+    if (count == 0) {
+	    *coun = count;
+	    return str;
+    }
+
     int index_str = 0;
 
     int i = 1;
