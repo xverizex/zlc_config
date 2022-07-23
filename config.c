@@ -469,7 +469,7 @@ static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
 
     int len = strlen (data);
 
-    int count = 1;
+    int count = 0;
     int state_quote = 0;
     for (int i = 0; (data[i] != ']' && data[i] != '\0') && i < len; i++) {
         if (data[i] == '\\' && data[i + 1] == '"') { i++; continue; }
@@ -479,10 +479,9 @@ static char **parse_array_string (char *data, int *error, int *pos, int *coun) {
                 count++;
                 state_quote = 0;
             }
-
-
         }
     }
+    count++;
 
 
     char **str = calloc (count, sizeof (void *));
