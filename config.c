@@ -552,6 +552,10 @@ static bool *parse_array_bool (char *data, int *error, int *pos, int *coun) {
 
     char **str = calloc (count, sizeof (void *));
     int index_str = 0;
+    if (count == 0) {
+	    *coun = count;
+	    return str;
+    }
 
     int i = 1;
     while (data[i] == ' ') i++;
@@ -635,6 +639,10 @@ static int64_t *parse_array_int64 (char *data, int *error, int *pos, int *coun) 
 
     char **str = calloc (count, sizeof (void *));
     int index_str = 0;
+    if (count == 0) {
+	    *coun = count;
+	    return str;
+    }
 
     int i = 1;
     while (data[i] == ' ') i++;
